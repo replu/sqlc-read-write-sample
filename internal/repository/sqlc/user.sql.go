@@ -18,8 +18,8 @@ INSERT INTO users(
 )
 `
 
-func (q *Queries) UserCreate(ctx context.Context, name string) (sql.Result, error) {
-	return q.db.ExecContext(ctx, userCreate, name)
+func (q *Queries) UserCreate(ctx context.Context, db DBTX, name string) (sql.Result, error) {
+	return db.ExecContext(ctx, userCreate, name)
 }
 
 const userGet = `-- name: UserGet :one
@@ -29,8 +29,8 @@ WHERE
   id = ?
 `
 
-func (q *Queries) UserGet(ctx context.Context, id uint64) (User, error) {
-	row := q.db.QueryRowContext(ctx, userGet, id)
+func (q *Queries) UserGet(ctx context.Context, db DBTX, id uint64) (User, error) {
+	row := db.QueryRowContext(ctx, userGet, id)
 	var i User
 	err := row.Scan(
 		&i.ID,

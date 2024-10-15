@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/replu/sqlc-read-write-sample/internal/model"
 	"github.com/replu/sqlc-read-write-sample/internal/repository/sqlc"
@@ -14,24 +13,15 @@ type Repository struct {
 	queries *sqlc.Queries
 }
 
-func NewRepository(dba *database.Accessor, conn *sql.DB) *Repository {
+func NewRepository(dba *database.Accessor) *Repository {
 	return &Repository{
 		dba:     dba,
-		queries: sqlc.New(conn),
+		queries:  sqlc.New(),
 	}
 }
 
 func (r *Repository) Get(ctx context.Context, id int64) (*model.User, error) {
-	tx, err := r.dba.GetTxFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	q := r.queries
-	if tx != nil {
-		q = q.WithTx(tx)
-	}
-
-	u, err := q.UserGet(ctx, uint64(id))
+	u, err := r.queries.UserGet(ctx, r.dba, uint64(id))
 	if err != nil {
 		return nil, err
 	}
@@ -39,16 +29,7 @@ func (r *Repository) Get(ctx context.Context, id int64) (*model.User, error) {
 }
 
 func (r *Repository) Create(ctx context.Context, name string) (*model.User, error) {
-	tx, err := r.dba.GetTxFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	q := r.queries
-	if tx != nil {
-		q = q.WithTx(tx)
-	}
-
-	res, err := r.queries.UserCreate(ctx, name)
+	res, err := r.queries.UserCreate(ctx, r.dba, name)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +39,7 @@ func (r *Repository) Create(ctx context.Context, name string) (*model.User, erro
 		return nil, err
 	}
 
-	u, err := r.queries.UserGet(ctx, uint64(id))
+	u, err := r.queries.UserGet(ctx, r.dba, uint64(id))
 	if err != nil {
 		return nil, err
 	}

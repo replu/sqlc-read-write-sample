@@ -8,3 +8,4 @@ sql:
       go:
         package: "sqlc"
         out: "../../internal/repository/sqlc"
+        emit_methods_with_db_argument: true
