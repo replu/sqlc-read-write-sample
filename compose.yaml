@@ -42,5 +42,16 @@ services:
     networks:
       - db
 
+  migrator:
+    build:
+      context: .
+      dockerfile: docker/mysqldef/Dockerfile
+    volumes:
+      - ./:/sqldef
+    depends_on:
+      - mysql-primary
+    networks:
+      - db
+
 networks:
   db:
