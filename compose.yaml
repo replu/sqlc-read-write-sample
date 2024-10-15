@@ -1,0 +1,46 @@
+services:
+  mysql-primary:
+    image: mysql:8.0
+    container_name: mysql-primary
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: sample
+    healthcheck:
+      test: mysql --host=localhost --port=3306 --user=replica_user --password=replica_password -e "quit" > /dev/null 2>&1
+      timeout: 1s
+      interval: 1s
+      retries: 20
+      start_period: 1s
+    volumes:
+        - ./db/docker-entrypoint-initdb.d/primary:/docker-entrypoint-initdb.d
+        - ./db/conf/primary_my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - 3306:3306
+    networks:
+      - db
+
+  mysql-replica:
+    image: mysql:8.0
+    container_name: mysql-replica
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      # MYSQL_ROOT_HOST: '%'
+      # MYSQL_USER: user
+      # MYSQL_PASSWORD: password
+      MYSQL_DATABASE: sample
+    volumes:
+        - ./db/docker-entrypoint-initdb.d/replica:/docker-entrypoint-initdb.d
+        - ./db/conf/replica_my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - "3307:3306"
+    networks:
+      - db
+
+networks:
+  db:
