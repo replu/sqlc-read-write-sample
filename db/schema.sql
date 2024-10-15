@@ -1,3 +1,5 @@
+use sample;
+
 CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(256) NOT NULL,
