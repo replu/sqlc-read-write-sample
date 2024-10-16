@@ -63,7 +63,7 @@ func (dba *Accessor) withTxContext(ctx context.Context, tx *sql.Tx) context.Cont
 	return context.WithValue(ctx, &ctxKeyTx{}, tx)
 }
 
-func (dba *Accessor) GetTxFromContext(ctx context.Context) (*sql.Tx, error) {
+func GetTxFromContext(ctx context.Context) (*sql.Tx, error) {
 	if v := ctx.Value(&ctxKeyTx{}); v != nil {
 		tx, ok := v.(*sql.Tx)
 		if !ok {

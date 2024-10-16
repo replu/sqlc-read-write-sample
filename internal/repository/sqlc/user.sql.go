@@ -8,6 +8,8 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+
+	"github.com/replu/sqlc-read-write-sample/internal/util/database"
 )
 
 const userCreate = `-- name: UserCreate :execresult
@@ -19,7 +21,18 @@ INSERT INTO users(
 `
 
 func (q *Queries) UserCreate(ctx context.Context, name string) (sql.Result, error) {
-	return q.db.ExecContext(ctx, userCreate, name)
+	var qq DBTX
+	tx, err := database.GetTxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		qq = q.WithTx(tx).writerDB
+	} else {
+		qq = q.writerDB
+	}
+
+	return qq.ExecContext(ctx, userCreate, name)
 }
 
 const userGet = `-- name: UserGet :one
@@ -30,9 +43,20 @@ WHERE
 `
 
 func (q *Queries) UserGet(ctx context.Context, id uint64) (User, error) {
-	row := q.db.QueryRowContext(ctx, userGet, id)
+	var qq DBTX
+	tx, err := database.GetTxFromContext(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	if tx != nil {
+		qq = q.WithTx(tx).writerDB
+	} else {
+		qq = q.readerDB
+	}
+
+	row := qq.QueryRowContext(ctx, userGet, id)
 	var i User
-	err := row.Scan(
+	err = row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,

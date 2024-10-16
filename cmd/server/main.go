@@ -31,7 +31,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	dbConn := database.Connect(fmt.Sprintf(database.DataSourceFormat,
+	primaryDBConn := database.Connect(fmt.Sprintf(database.DataSourceFormat,
 		conf.PrimaryDBUsername,
 		conf.PrimaryDBPassword,
 		conf.PrimaryDBHost,
@@ -39,9 +39,17 @@ func main() {
 		conf.DBDatabase,
 	))
 
-	dba := database.NewAccessor(dbConn)
+	replicaDBConn := database.Connect(fmt.Sprintf(database.DataSourceFormat,
+		conf.ReplicaDBUsername,
+		conf.ReplicaDBPassword,
+		conf.ReplicaDBHost,
+		conf.ReplicaDBPort,
+		conf.DBDatabase,
+	))
 
-	repo := repository.NewRepository(dba, dbConn)
+	repo := repository.NewRepository(primaryDBConn, replicaDBConn)
+
+	dba := database.NewAccessor(primaryDBConn)
 	srv := service.NewService(dba, repo)
 
 	mux := routing(handler.NewHandler(srv))
@@ -59,8 +67,11 @@ func main() {
 		if err := server.Shutdown(ctx); err != nil {
 			log.Fatalf("Shutdown: %v", err)
 		}
-		if err := dbConn.Close(); err != nil {
+		if err := primaryDBConn.Close(); err != nil {
 			log.Fatalf("Primary DB Close: %v", err)
+		}
+		if err := replicaDBConn.Close(); err != nil {
+			log.Fatalf("Replica DB Close: %v", err)
 		}
 	}()
 
